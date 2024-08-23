@@ -13,17 +13,20 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserDto } from './dtos/user.dto';
 import { Serialize } from 'src/interceptor/serialize.interceptor';
-
+import { AuthService } from './auth.service';
 
 
 @Controller('auth')
 //Appling custom Interceptors on whole controller
 @Serialize(UserDto)
 export class UsersController {
-    constructor(private userservice: UsersService){}
+    constructor(
+        private userservice: UsersService,
+        private authservice:AuthService){}
+
     @Post('/signup')
     createUser(@Body() body:CreateUserDto){
-        this.userservice.create(body.email, body.password);
+        this.authservice.authsignup(body.email, body.password);
     }
 
     //Interceptor intercept the outgoing response and apply classserailizerInterceptor so that instance can beconverted to a plain object
