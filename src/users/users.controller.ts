@@ -26,7 +26,13 @@ export class UsersController {
 
     @Post('/signup')
     createUser(@Body() body:CreateUserDto){
-        this.authservice.authsignup(body.email, body.password);
+        return this.authservice.authsignup(body.email, body.password);
+    }
+
+    @Post('/signin')
+    signin(@Body() body: CreateUserDto)
+    {
+        return this.authservice.authsignin(body.email, body.password);
     }
 
     //Interceptor intercept the outgoing response and apply classserailizerInterceptor so that instance can beconverted to a plain object
