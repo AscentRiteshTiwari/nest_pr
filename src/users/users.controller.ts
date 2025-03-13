@@ -7,36 +7,79 @@ import {
     Param, 
     Query, 
     Delete,
-    NotFoundException } from '@nestjs/common';
+    Session,
+    NotFoundException,
+    UseInterceptors, 
+    UseGuards} from '@nestjs/common';
+import { User } from './user.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserDto } from './dtos/user.dto';
-import { Serialize } from 'src/interceptor/serialize.interceptor';
+import { Serialize, SerializerInterceptor } from 'src/interceptor/serialize.interceptor';
 import { AuthService } from './auth.service';
+import { currentUser } from './decorator/current-user.decorator';
+import { CurrentUserInterceptor } from './interceptors/current-cuser.interceptor';
+import { AuthGuard } from 'src/guards/auth.guard';
 
 
 @Controller('auth')
+
 //Appling custom Interceptors on whole controller
 @Serialize(UserDto)
+// @UseInterceptors(CurrentUserInterceptor)
+//to apply the useInterceptor see on users.module.ts
+
+
 export class UsersController {
     constructor(
         private userservice: UsersService,
         private authservice:AuthService){}
 
+    //simplyfing the Sessions Propety (simple world)
+
+// @Get('/colors/:color')
+// setColor(@Param('color') color:string, @Session() session:any)
+// {
+//     session.color = color;
+// }
+
+// @Get('/colors')
+// getColor(@Session() session: any) {
+//     return session.color;
+// }
+
     @Post('/signup')
-    createUser(@Body() body:CreateUserDto){
-        return this.authservice.authsignup(body.email, body.password);
+    async createUser(@Body() body:CreateUserDto, @Session() session:any){
+        const user = await this.authservice.authsignup(body.email, body.password);
+        session.userId = user.id;
+        return user;
     }
 
     @Post('/signin')
-    signin(@Body() body: CreateUserDto)
+    async signin(@Body() body: CreateUserDto, @Session() session:any)
     {
-        return this.authservice.authsignin(body.email, body.password);
+        const user = await this.authservice.authsignin(body.email, body.password);
+        session.userId = user.id;
+        return user;
+    }
+
+    //Session Management current signinUser(using Interceptor+ decorator)
+    @Get('/WhoAmI')
+    @UseGuards(AuthGuard)
+    whoAmI(@currentUser() user: User)
+    {
+        return user;
+    }
+
+    //signout
+    @Post('/signout')
+    signout(@Session() session: any) {
+        session.userId = null;
     }
 
     //Interceptor intercept the outgoing response and apply classserailizerInterceptor so that instance can beconverted to a plain object
-    //@UseInterceptors(new SerializerInterceptor(UserDto))
+    @UseInterceptors(new SerializerInterceptor(UserDto))
     @Get('/:id')
     async findUser(@Param('id') id: string){
         console.log('Running the main route handler')
@@ -75,4 +118,5 @@ export class UsersController {
     {
         return this.userservice.update(parseInt(id), body);
     }
+
 }

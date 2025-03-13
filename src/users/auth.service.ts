@@ -16,7 +16,6 @@ export class AuthService{
          if(users.length) {
             throw new BadRequestException('email is in use');
          }
-
         //Hash the users Password
         //Generate the Salt
         const salt = randomBytes(8).toString('hex');
@@ -32,7 +31,6 @@ export class AuthService{
 
         //return the user
         return user;
-
     }
 
     async authsignin(email: string, password: string){
